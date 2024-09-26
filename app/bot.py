@@ -3,12 +3,12 @@ from telebot import types
 from dotenv import load_dotenv
 import os
 import numpy as np
-from commands import parse_matrix, matrix_addition, matrix_subtraction, matrix_multiplication, matrix_transposition
+from commands import parse_matrix, matrix_addition, matrix_subtraction, matrix_multiplication, matrix_transposition, matrix_power
 
 load_dotenv()
-bot_token = os.getenv('TELEBOT_TOKEN')  #Токен бота
+bot_token = os.getenv('TELEBOT_TOKEN')  # Токен бота
 
-bot = telebot.TeleBot(bot_token) #Инициализация бота
+bot = telebot.TeleBot(bot_token) # Инициализация бота
 
 operation_mode = None
 
@@ -19,6 +19,7 @@ def welcome(message):
     markup.add(types.KeyboardButton('Вычитание'))
     markup.add(types.KeyboardButton('Умножение'))
     markup.add(types.KeyboardButton('Транспонирование'))
+    markup.add(types.KeyboardButton('Возведение в степень'))
     markup.add(types.KeyboardButton('Помощь'))
     bot.reply_to(message, "Привет! Выбери операцию.", reply_markup=markup)
 
@@ -46,6 +47,12 @@ def transpose(message):
     operation_mode = 'matrix_transposition'
     bot.send_message(message.chat.id, 'Отправьте матрицу для транспонирования.')
 
+@bot.message_handler(func=lambda message: message.text == 'Возведение в степень')
+def power(message):
+    global operation_mode
+    operation_mode = 'matrix_power'
+    bot.send_message(message.chat.id, 'Отправьте матрицу и степень, разделённые пустой строкой.')
+
 @bot.message_handler(func=lambda message: message.text == 'Помощь')
 def help_message(message):
     instructions = """
@@ -71,6 +78,11 @@ def help_message(message):
     - Отправьте матрицу для транспонирования.
     - Бот вернёт транспонированную матрицу.
 
+    5. Возведение в степень:
+    - Нажмите кнопку "Возведение в степень".
+    - Отправьте матрицу и степень, разделённые пустой строкой.
+    - Бот вернёт результат возведения матрицы в степень.
+
     Пример ввода матриц:
     ```
     1 2 3
@@ -79,6 +91,8 @@ def help_message(message):
     7 8 9
     10 11 12
     ```
+
+    Если у вас возникли вопросы или проблемы, пожалуйста, свяжитесь с администратором.
     """
     bot.send_message(message.chat.id, instructions)
 
@@ -88,31 +102,41 @@ def handle_message(message):
     try:
         text = message.text.strip()
 
-        if operation_mode == 'matrix_transposition': #Транспонированая матрица
+        if operation_mode == 'matrix_transposition':
             matrix = parse_matrix(text)
             result = matrix_transposition(matrix)
             bot.reply_to(message, f"Транспонированная матрица:\n{np.array(result)}")
 
+        elif operation_mode == 'matrix_power':
+            parts = text.split('\n\n')
+            if len(parts) == 2:
+                matrix = parse_matrix(parts[0])
+                power = int(parts[1].strip())
+                result = matrix_power(matrix, power)
+                bot.reply_to(message, f"Результат возведения в степень:\n{np.array(result)}")
+            else:
+                bot.reply_to(message, "Пожалуйста, отправьте матрицу и степень, разделённые пустой строкой.")
+
         elif '\n\n' in text:
-            matrices = text.split('\n\n')  #Разделяем текст на две части по пустой строке
+            matrices = text.split('\n\n')  # Разделяем текст на две части по пустой строке
             if len(matrices) == 2:
-                matrix1 = parse_matrix(matrices[0])  #Преобразуем первую в матрицу
-                matrix2 = parse_matrix(matrices[1])  #Преобразуем вторую в матрицу
+                matrix1 = parse_matrix(matrices[0])  # Преобразуем первую в матрицу
+                matrix2 = parse_matrix(matrices[1])  # Преобразуем вторую в матрицу
 
                 if operation_mode == 'matrix_addition':
-                    result = matrix_addition(matrix1, matrix2) #Сложение матриц
+                    result = matrix_addition(matrix1, matrix2) # Сложение матриц
                     bot.reply_to(message, f"Результат сложения:\n{np.array(result)}")
 
                 elif operation_mode == 'matrix_subtraction':
-                    result = matrix_subtraction(matrix1, matrix2) #Вычитание матриц
+                    result = matrix_subtraction(matrix1, matrix2) # Вычитание матриц
                     bot.reply_to(message, f"Результат вычитания:\n{np.array(result)}")
 
                 elif operation_mode == 'matrix_multiplication':
-                    result = matrix_multiplication(matrix1, matrix2) #Умножение матриц
+                    result = matrix_multiplication(matrix1, matrix2) # Умножение матриц
                     bot.reply_to(message, f"Результат умножения:\n{np.array(result)}")
 
                 else:
-                    bot.reply_to(message, "Пожалуйста, выберите операцию: Сложение, Вычитание, Умножение или Транспонирование.")
+                    bot.reply_to(message, "Пожалуйста, выберите операцию: Сложение, Вычитание, Умножение, Транспонирование или Возведение в степень.")
             else:
                 bot.reply_to(message, "Пожалуйста, отправьте две матрицы, разделённые пустой строкой.")
         else:
@@ -120,14 +144,6 @@ def handle_message(message):
 
     except Exception as e:
         bot.reply_to(message, f"Ошибка: {str(e)}")
-
-@bot.message_handler(content_types=['voice']) #Обработчик для голосовых сообщений
-def handle_voice_message(message):
-    bot.send_message(message.chat.id, "Извините, я не могу обрабатывать голосовые сообщения. Пожалуйста, воспользуйтесь текстовыми сообщениями или кнопкой 'Помощь'.")
-
-@bot.message_handler(content_types=['sticker']) #Обработчик для стикеров
-def handle_sticker_message(message):
-    bot.send_message(message.chat.id, "Извините, я не могу обрабатывать стикеры. Пожалуйста, воспользуйтесь текстовыми сообщениями или кнопкой 'Помощь'.")
 
 if __name__ == "__main__":
     bot.polling()
