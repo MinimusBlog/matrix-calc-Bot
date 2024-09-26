@@ -29,3 +29,6 @@ def matrix_power(matrix, power): #Возведение в степень
     if matrix.shape[0] != matrix.shape[1]:
         raise ValueError("Матрица должна быть квадратной для возведения в степень")
     return np.linalg.matrix_power(matrix, power).tolist()
+
+def matrix_scalar_multiplication(matrix, scalar):
+    return np.multiply(matrix, scalar).tolist()

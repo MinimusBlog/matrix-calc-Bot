@@ -3,7 +3,7 @@ from telebot import types
 from dotenv import load_dotenv
 import os
 import numpy as np
-from commands import parse_matrix, matrix_addition, matrix_subtraction, matrix_multiplication, matrix_transposition, matrix_power
+from commands import parse_matrix, matrix_addition, matrix_subtraction, matrix_multiplication, matrix_transposition, matrix_power, matrix_scalar_multiplication
 
 load_dotenv()
 bot_token = os.getenv('TELEBOT_TOKEN')  # Токен бота
@@ -20,6 +20,7 @@ def welcome(message):
     markup.add(types.KeyboardButton('Умножение'))
     markup.add(types.KeyboardButton('Транспонирование'))
     markup.add(types.KeyboardButton('Возведение в степень'))
+    markup.add(types.KeyboardButton('Умножение на число'))
     markup.add(types.KeyboardButton('Помощь'))
     bot.reply_to(message, "Привет! Выбери операцию.", reply_markup=markup)
 
@@ -53,6 +54,12 @@ def power(message):
     operation_mode = 'matrix_power'
     bot.send_message(message.chat.id, 'Отправьте матрицу и степень, разделённые пустой строкой.')
 
+@bot.message_handler(func=lambda message: message.text == 'Умножение на число')
+def scalar(message):
+    global operation_mode
+    operation_mode = 'matrix_scalar'
+    bot.send_message(message.chat.id, 'Отправьте матрицу и число, разделённые пустой строкой.')
+
 @bot.message_handler(func=lambda message: message.text == 'Помощь')
 def help_message(message):
     instructions = """
@@ -82,6 +89,11 @@ def help_message(message):
     - Нажмите кнопку "Возведение в степень".
     - Отправьте матрицу и степень, разделённые пустой строкой.
     - Бот вернёт результат возведения матрицы в степень.
+
+    6. Умножение на число:
+    - Нажмите кнопку "Умножение на число".
+    - Отправьте матрицу и число, разделённые пустой строкой.
+    - Бот вернёт результат умноженной матрицы на число.
 
     Пример ввода матриц:
     ```
@@ -134,6 +146,11 @@ def handle_message(message):
                 elif operation_mode == 'matrix_multiplication':
                     result = matrix_multiplication(matrix1, matrix2) # Умножение матриц
                     bot.reply_to(message, f"Результат умножения:\n{np.array(result)}")
+                
+                elif operation_mode == 'matrix_scalar':
+                    scalar = float(matrices[1].strip())  # Извлекаем скаляр
+                    result = matrix_scalar_multiplication(matrix1, scalar) # Скалярное умножение
+                    bot.reply_to(message, f"Результат умножения на число:\n{np.array(result)}")
 
                 else:
                     bot.reply_to(message, "Пожалуйста, выберите операцию: Сложение, Вычитание, Умножение, Транспонирование или Возведение в степень.")
