@@ -113,6 +113,13 @@ def handle_command(message):
     operation_mode, response_message = command_handlers[command]
     bot.send_message(message.chat.id, response_message)
 
+@bot.message_handler(content_types=['voice']) #Обработчик для голосовых сообщений
+def handle_voice_message(message):
+    bot.send_message(message.chat.id, "Извините, я не могу обрабатывать голосовые сообщения. Пожалуйста, воспользуйтесь текстовыми сообщениями или кнопкой 'Помощь'.")
+@bot.message_handler(content_types=['sticker']) #Обработчик для стикеров
+def handle_sticker_message(message):
+    bot.send_message(message.chat.id, "Извините, я не могу обрабатывать стикеры. Пожалуйста, воспользуйтесь текстовыми сообщениями или кнопкой 'Помощь'.")
+
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
     global operation_mode
