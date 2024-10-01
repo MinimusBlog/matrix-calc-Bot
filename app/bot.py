@@ -23,30 +23,24 @@ def welcome(message):
 
 @bot.message_handler(func=lambda message: message.text == 'Матрицы')
 def matrices(message):
-    markup = types.InlineKeyboardMarkup()
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     buttons = [
-        types.InlineKeyboardButton('Сложение', callback_data='matrix_addition'),
-        types.InlineKeyboardButton('Вычитание', callback_data='matrix_subtraction'),
-        types.InlineKeyboardButton('Умножение', callback_data='matrix_multiplication'),
-        types.InlineKeyboardButton('Возведение в степень', callback_data='matrix_power'),
-        types.InlineKeyboardButton('Умножение на число', callback_data='matrix_scalar'),
-        types.InlineKeyboardButton('Транспонирование', callback_data='matrix_transposition'),
-        types.InlineKeyboardButton('Определитель', callback_data='matrix_determinant'),
-        types.InlineKeyboardButton('Помощь', callback_data='help')
+        types.KeyboardButton('Сложение'),
+        types.KeyboardButton('Вычитание'),
+        types.KeyboardButton('Умножение'),
+        types.KeyboardButton('Возведение в степень'),
+        types.KeyboardButton('Умножение на число'),
+        types.KeyboardButton('Транспонирование'),
+        types.KeyboardButton('Определитель'),
+        types.KeyboardButton('Помощь'),
+        types.KeyboardButton('Назад')
     ]
-    for button in buttons:
-        markup.add(button)
+    markup.add(*buttons)
     bot.send_message(message.chat.id, "Выбери операцию с матрицами:", reply_markup=markup)
 
-@bot.callback_query_handler(func=lambda call: True)
-def handle_callback(call):
-    global operation_mode
-    command = call.data
-    if command in command_handlers:
-        operation_mode, response_message = command_handlers[command]
-        bot.send_message(call.message.chat.id, response_message)
-    else:
-        bot.send_message(call.message.chat.id, "Неизвестная команда.")
+@bot.message_handler(func=lambda message: message.text == 'Назад')
+def back(message):
+    welcome(message)
 
 command_handlers = { #Словарь для хранения команд и их обработчиков
     'matrix_addition': ('matrix_addition', 'Отправьте две матрицы для сложения, разделённые пустой строкой.'),
@@ -111,6 +105,13 @@ command_handlers = { #Словарь для хранения команд и и�
     Если у вас возникли вопросы или проблемы, пожалуйста, свяжитесь с администратором.
     """)
 }
+
+@bot.message_handler(func=lambda message: message.text in command_handlers)
+def handle_command(message):
+    global operation_mode
+    command = message.text
+    operation_mode, response_message = command_handlers[command]
+    bot.send_message(message.chat.id, response_message)
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
