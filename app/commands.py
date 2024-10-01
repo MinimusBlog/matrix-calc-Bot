@@ -32,3 +32,8 @@ def matrix_power(matrix, power): #Возведение в степень
 
 def matrix_scalar_multiplication(matrix, scalar):
     return np.multiply(matrix, scalar).tolist()
+
+def matrix_determinant(matrix):
+    if matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("Матрица должна быть квадратной для нахождения её определителя")
+    return np.linalg.det(matrix)

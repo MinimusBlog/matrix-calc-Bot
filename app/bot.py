@@ -3,7 +3,7 @@ from telebot import types
 from dotenv import load_dotenv
 import os
 import numpy as np
-from commands import parse_matrix, matrix_addition, matrix_subtraction, matrix_multiplication, matrix_transposition, matrix_power, matrix_scalar_multiplication
+from commands import parse_matrix, matrix_addition, matrix_subtraction, matrix_multiplication, matrix_transposition, matrix_power, matrix_scalar_multiplication, matrix_determinant
 
 load_dotenv()
 bot_token = os.getenv('TELEBOT_TOKEN')  # Токен бота
@@ -15,13 +15,17 @@ operation_mode = None
 @bot.message_handler(commands=['start'])
 def welcome(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(types.KeyboardButton('Сложение'))
-    markup.add(types.KeyboardButton('Вычитание'))
-    markup.add(types.KeyboardButton('Умножение'))
-    markup.add(types.KeyboardButton('Транспонирование'))
-    markup.add(types.KeyboardButton('Возведение в степень'))
-    markup.add(types.KeyboardButton('Умножение на число'))
-    markup.add(types.KeyboardButton('Помощь'))
+    buttons = [
+        types.KeyboardButton('Сложение'),
+        types.KeyboardButton('Вычитание'),
+        types.KeyboardButton('Умножение'),
+        types.KeyboardButton('Возведение в степень'),
+        types.KeyboardButton('Умножение на число'),
+        types.KeyboardButton('Транспонирование'),
+        types.KeyboardButton('Определитель'),
+        types.KeyboardButton('Помощь')
+    ]
+    markup.add(*buttons)
     bot.reply_to(message, "Привет! Выбери операцию.", reply_markup=markup)
 
 @bot.message_handler(func=lambda message: message.text == 'Сложение')
@@ -60,6 +64,12 @@ def scalar(message):
     operation_mode = 'matrix_scalar'
     bot.send_message(message.chat.id, 'Отправьте матрицу и число, разделённые пустой строкой.')
 
+@bot.message_handler(func=lambda message: message.text == 'Определитель')
+def determinant(message):
+    global operation_mode
+    operation_mode = 'matrix_determinant'
+    bot.send_message(message.chat.id, 'Отправьте матрицу.')
+
 @bot.message_handler(func=lambda message: message.text == 'Помощь')
 def help_message(message):
     instructions = """
@@ -95,6 +105,11 @@ def help_message(message):
     - Отправьте матрицу и число, разделённые пустой строкой.
     - Бот вернёт результат умноженной матрицы на число.
 
+    7. Нахождение определителя:
+    - Нажмите кнопку "Определитель".
+    - Отправьте матрицу для нахождения.
+    - Бот вернёт результат определителя.
+
     Пример ввода матриц:
     ```
     1 2 3
@@ -118,6 +133,11 @@ def handle_message(message):
             matrix = parse_matrix(text)
             result = matrix_transposition(matrix)
             bot.reply_to(message, f"Транспонированная матрица:\n{np.array(result)}")
+
+        elif operation_mode == 'matrix_determinant':
+            matrix = parse_matrix(text)
+            result = matrix_determinant(matrix)
+            bot.reply_to(message, f"Определитель матрицы:\n{np.array(result)}")
 
         elif operation_mode == 'matrix_power':
             parts = text.split('\n\n')
