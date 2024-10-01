@@ -16,63 +16,47 @@ operation_mode = None
 def welcome(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     buttons = [
-        types.KeyboardButton('Сложение'),
-        types.KeyboardButton('Вычитание'),
-        types.KeyboardButton('Умножение'),
-        types.KeyboardButton('Возведение в степень'),
-        types.KeyboardButton('Умножение на число'),
-        types.KeyboardButton('Транспонирование'),
-        types.KeyboardButton('Определитель'),
-        types.KeyboardButton('Помощь')
+        types.KeyboardButton('Матрицы')
     ]
     markup.add(*buttons)
-    bot.reply_to(message, "Привет! Выбери операцию.", reply_markup=markup)
+    bot.reply_to(message, "Привет! Выбери категорию.", reply_markup=markup)
 
-@bot.message_handler(func=lambda message: message.text == 'Сложение')
-def add(message):
+@bot.message_handler(func=lambda message: message.text == 'Матрицы')
+def matrices(message):
+    markup = types.InlineKeyboardMarkup()
+    buttons = [
+        types.InlineKeyboardButton('Сложение', callback_data='matrix_addition'),
+        types.InlineKeyboardButton('Вычитание', callback_data='matrix_subtraction'),
+        types.InlineKeyboardButton('Умножение', callback_data='matrix_multiplication'),
+        types.InlineKeyboardButton('Возведение в степень', callback_data='matrix_power'),
+        types.InlineKeyboardButton('Умножение на число', callback_data='matrix_scalar'),
+        types.InlineKeyboardButton('Транспонирование', callback_data='matrix_transposition'),
+        types.InlineKeyboardButton('Определитель', callback_data='matrix_determinant'),
+        types.InlineKeyboardButton('Помощь', callback_data='help')
+    ]
+    for button in buttons:
+        markup.add(button)
+    bot.send_message(message.chat.id, "Выбери операцию с матрицами:", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: True)
+def handle_callback(call):
     global operation_mode
-    operation_mode = 'matrix_addition'
-    bot.send_message(message.chat.id, 'Отправьте две матрицы для сложения, разделённые пустой строкой.')
+    command = call.data
+    if command in command_handlers:
+        operation_mode, response_message = command_handlers[command]
+        bot.send_message(call.message.chat.id, response_message)
+    else:
+        bot.send_message(call.message.chat.id, "Неизвестная команда.")
 
-@bot.message_handler(func=lambda message: message.text == 'Вычитание')
-def subtract(message):
-    global operation_mode
-    operation_mode = 'matrix_subtraction'
-    bot.send_message(message.chat.id, 'Отправьте две матрицы для вычитания, разделённые пустой строкой.')
-
-@bot.message_handler(func=lambda message: message.text == 'Умножение')
-def multiply(message):
-    global operation_mode
-    operation_mode = 'matrix_multiplication'
-    bot.send_message(message.chat.id, 'Отправьте две матрицы для умножения, разделённые пустой строкой.')
-
-@bot.message_handler(func=lambda message: message.text == 'Транспонирование')
-def transpose(message):
-    global operation_mode
-    operation_mode = 'matrix_transposition'
-    bot.send_message(message.chat.id, 'Отправьте матрицу для транспонирования.')
-
-@bot.message_handler(func=lambda message: message.text == 'Возведение в степень')
-def power(message):
-    global operation_mode
-    operation_mode = 'matrix_power'
-    bot.send_message(message.chat.id, 'Отправьте матрицу и степень, разделённые пустой строкой.')
-
-@bot.message_handler(func=lambda message: message.text == 'Умножение на число')
-def scalar(message):
-    global operation_mode
-    operation_mode = 'matrix_scalar'
-    bot.send_message(message.chat.id, 'Отправьте матрицу и число, разделённые пустой строкой.')
-
-@bot.message_handler(func=lambda message: message.text == 'Определитель')
-def determinant(message):
-    global operation_mode
-    operation_mode = 'matrix_determinant'
-    bot.send_message(message.chat.id, 'Отправьте матрицу.')
-
-@bot.message_handler(func=lambda message: message.text == 'Помощь')
-def help_message(message):
-    instructions = """
+command_handlers = { #Словарь для хранения команд и их обработчиков
+    'matrix_addition': ('matrix_addition', 'Отправьте две матрицы для сложения, разделённые пустой строкой.'),
+    'matrix_subtraction': ('matrix_subtraction', 'Отправьте две матрицы для вычитания, разделённые пустой строкой.'),
+    'matrix_multiplication': ('matrix_multiplication', 'Отправьте две матрицы для умножения, разделённые пустой строкой.'),
+    'matrix_transposition': ('matrix_transposition', 'Отправьте матрицу для транспонирования.'),
+    'matrix_power': ('matrix_power', 'Отправьте матрицу и степень, разделённые пустой строкой.'),
+    'matrix_scalar': ('matrix_scalar', 'Отправьте матрицу и число, разделённые пустой строкой.'),
+    'matrix_determinant': ('matrix_determinant', 'Отправьте матрицу.'),
+    'help': ('help', """
     Привет! Это инструкции по использованию бота:
 
     1. Сложение:
@@ -125,8 +109,8 @@ def help_message(message):
     ```
 
     Если у вас возникли вопросы или проблемы, пожалуйста, свяжитесь с администратором.
-    """
-    bot.send_message(message.chat.id, instructions)
+    """)
+}
 
 @bot.message_handler(func=lambda message: True)
 def handle_message(message):
@@ -161,20 +145,20 @@ def handle_message(message):
                 matrix2 = parse_matrix(matrices[1])  # Преобразуем вторую в матрицу
 
                 if operation_mode == 'matrix_addition':
-                    result = matrix_addition(matrix1, matrix2) # Сложение матриц
+                    result = matrix_addition(matrix1, matrix2)  # Сложение матриц
                     bot.reply_to(message, f"Результат сложения:\n{np.array(result)}")
 
                 elif operation_mode == 'matrix_subtraction':
-                    result = matrix_subtraction(matrix1, matrix2) # Вычитание матриц
+                    result = matrix_subtraction(matrix1, matrix2)  # Вычитание матриц
                     bot.reply_to(message, f"Результат вычитания:\n{np.array(result)}")
 
                 elif operation_mode == 'matrix_multiplication':
-                    result = matrix_multiplication(matrix1, matrix2) # Умножение матриц
+                    result = matrix_multiplication(matrix1, matrix2)  # Умножение матриц
                     bot.reply_to(message, f"Результат умножения:\n{np.array(result)}")
-                
+
                 elif operation_mode == 'matrix_scalar':
                     scalar = float(matrices[1].strip())  # Извлекаем скаляр
-                    result = matrix_scalar_multiplication(matrix1, scalar) # Скалярное умножение
+                    result = matrix_scalar_multiplication(matrix1, scalar)  # Скалярное умножение
                     bot.reply_to(message, f"Результат умножения на число:\n{np.array(result)}")
 
                 else:
