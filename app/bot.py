@@ -4,11 +4,12 @@ from dotenv import load_dotenv
 import os
 import numpy as np
 from commands import parse_matrix, matrix_addition, matrix_subtraction, matrix_multiplication, matrix_transposition, matrix_power, matrix_scalar_multiplication, matrix_determinant
+from calculator import addition, subtract, multiply, divide, power, sqrt, log, sin, cos, tan
 
 load_dotenv()
 bot_token = os.getenv('TELEBOT_TOKEN')  # Токен бота
 
-bot = telebot.TeleBot(bot_token) # Инициализация бота
+bot = telebot.TeleBot(bot_token)  # Инициализация бота
 
 operation_mode = None
 
@@ -16,7 +17,8 @@ operation_mode = None
 def welcome(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     buttons = [
-        types.KeyboardButton('Матрицы')
+        types.KeyboardButton('Матрицы'),
+        types.KeyboardButton('Калькулятор')
     ]
     markup.add(*buttons)
     bot.reply_to(message, "Привет! Выбери категорию.", reply_markup=markup)
@@ -38,6 +40,19 @@ def matrices(message):
     markup.add(*buttons)
     bot.send_message(message.chat.id, "Выбери операцию с матрицами:", reply_markup=markup)
 
+@bot.message_handler(func=lambda message: message.text == 'Калькулятор')
+def calculator(message):
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    buttons = [
+        types.KeyboardButton('Сложение'),
+        types.KeyboardButton('Вычитание'),
+        types.KeyboardButton('Умножение'),
+        types.KeyboardButton('Деление'),
+        types.KeyboardButton('Назад')
+    ]
+    markup.add(*buttons)
+    bot.send_message(message.chat.id, "Выбери операцию калькулятора:", reply_markup=markup)
+
 @bot.message_handler(func=lambda message: message.text == 'Назад')
 def back(message):
     welcome(message)
@@ -50,6 +65,16 @@ command_handlers = { #Словарь для хранения команд и и�
     'matrix_power': ('matrix_power', 'Отправьте матрицу и степень, разделённые пустой строкой.'),
     'matrix_scalar': ('matrix_scalar', 'Отправьте матрицу и число, разделённые пустой строкой.'),
     'matrix_determinant': ('matrix_determinant', 'Отправьте матрицу.'),
+    'Сложение': ('addition', 'Отправьте два числа для сложения, разделённые пробелом.'),
+    'Вычитание': ('subtract', 'Отправьте два числа для вычитания, разделённые пробелом.'),
+    'Умножение': ('multiply', 'Отправьте два числа для умножения, разделённые пробелом.'),
+    'Деление': ('divide', 'Отправьте два числа для деления, разделённые пробелом.'),
+    'Возведение в степень': ('power', 'Отправьте число и степень, разделённые пробелом.'),
+    'Квадратный корень': ('sqrt', 'Отправьте число для вычисления квадратного корня.'),
+    'Логарифм': ('log', 'Отправьте число для вычисления натурального логарифма.'),
+    'Синус': ('sin', 'Отправьте число для вычисления синуса.'),
+    'Косинус': ('cos', 'Отправьте число для вычисления косинуса.'),
+    'Тангенс': ('tan', 'Отправьте число для вычисления тангенса.'),
     'help': ('help', """
     Привет! Это инструкции по использованию бота:
 
@@ -174,7 +199,58 @@ def handle_message(message):
             else:
                 bot.reply_to(message, "Пожалуйста, отправьте две матрицы, разделённые пустой строкой.")
         else:
-            bot.reply_to(message, "Пожалуйста, отправьте две матрицы, разделённые пустой строкой.")
+            if operation_mode == 'addition':
+                a, b = map(float, text.split())
+                result = addition(a, b)
+                bot.reply_to(message, f"Результат сложения: {result}")
+
+            elif operation_mode == 'subtract':
+                a, b = map(float, text.split())
+                result = subtract(a, b)
+                bot.reply_to(message, f"Результат вычитания: {result}")
+
+            elif operation_mode == 'multiply':
+                a, b = map(float, text.split())
+                result = multiply(a, b)
+                bot.reply_to(message, f"Результат умножения: {result}")
+
+            elif operation_mode == 'divide':
+                a, b = map(float, text.split())
+                result = divide(a, b)
+                bot.reply_to(message, f"Результат деления: {result}")
+
+            elif operation_mode == 'power':
+                a, b = map(float, text.split())
+                result = power(a, b)
+                bot.reply_to(message, f"Результат возведения в степень: {result}")
+
+            elif operation_mode == 'sqrt':
+                a = float(text)
+                result = sqrt(a)
+                bot.reply_to(message, f"Результат квадратного корня: {result}")
+
+            elif operation_mode == 'log':
+                a = float(text)
+                result = log(a)
+                bot.reply_to(message, f"Результат натурального логарифма: {result}")
+
+            elif operation_mode == 'sin':
+                a = float(text)
+                result = sin(a)
+                bot.reply_to(message, f"Результат синуса: {result}")
+
+            elif operation_mode == 'cos':
+                a = float(text)
+                result = cos(a)
+                bot.reply_to(message, f"Результат косинуса: {result}")
+
+            elif operation_mode == 'tan':
+                a = float(text)
+                result = tan(a)
+                bot.reply_to(message, f"Результат тангенса: {result}")
+            
+            else:
+                bot.reply_to(message, "Пожалуйста, выберите операцию.")
 
     except Exception as e:
         bot.reply_to(message, f"Ошибка: {str(e)}")
